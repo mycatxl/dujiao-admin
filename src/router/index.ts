@@ -161,6 +161,12 @@ const routes = [
         component: () => import('@/views/admin/ProductMappings.vue'),
         meta: { permission: 'GET:/admin/product-mappings' },
       },
+      {
+        path: 'procurement-orders',
+        name: 'procurement-orders',
+        component: () => import('@/views/admin/ProcurementOrders.vue'),
+        meta: { permission: 'GET:/admin/procurement-orders' },
+      },
     ],
   },
 ]

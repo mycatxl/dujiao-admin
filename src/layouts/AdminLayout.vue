@@ -32,6 +32,7 @@ import {
   Sun,
   Moon,
   Link,
+  Truck,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -256,6 +257,12 @@ const navGroups = computed<NavGroup[]>(() => {
           to: '/product-mappings',
           icon: Boxes,
           permission: 'GET:/admin/product-mappings',
+        },
+        {
+          label: t('admin.navItems.procurementOrders'),
+          to: '/procurement-orders',
+          icon: Truck,
+          permission: 'GET:/admin/procurement-orders',
         },
       ],
     },

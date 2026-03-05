@@ -345,4 +345,9 @@ export const adminAPI = {
   updateProductMappingStatus: (id: number, data: any) => api.put<ApiResponse>(`/admin/product-mappings/${id}/status`, data),
   deleteProductMapping: (id: number) => api.delete<ApiResponse>(`/admin/product-mappings/${id}`),
   getUpstreamProducts: (params?: any) => api.get<ApiResponse>('/admin/upstream-products', { params }),
+  // Procurement Orders
+  getProcurementOrders: (params?: any) => api.get<ApiResponse>('/admin/procurement-orders', { params }),
+  getProcurementOrder: (id: number) => api.get<ApiResponse>(`/admin/procurement-orders/${id}`),
+  retryProcurementOrder: (id: number) => api.post<ApiResponse>(`/admin/procurement-orders/${id}/retry`),
+  cancelProcurementOrder: (id: number) => api.post<ApiResponse>(`/admin/procurement-orders/${id}/cancel`),
 }
