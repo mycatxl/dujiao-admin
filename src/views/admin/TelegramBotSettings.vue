@@ -42,13 +42,9 @@ const createMenuItem = (): MenuItem => ({
 const currentLang = ref<SupportedLanguage>('zh-CN')
 const loading = ref(false)
 const saving = ref(false)
-const uploadingAvatar = ref(false)
 const uploadingCover = ref(false)
-const uploadingAnnouncementImage = ref(false)
 
-const avatarFileInput = ref<HTMLInputElement>()
 const coverFileInput = ref<HTMLInputElement>()
-const announcementImageFileInput = ref<HTMLInputElement>()
 
 const languages = computed(() => [
   { code: 'zh-CN' as SupportedLanguage, name: t('admin.common.lang.zhCN') },
@@ -63,19 +59,11 @@ const form = ref({
     display_name: '',
     description: emptyLocalized(),
     support_url: '',
-    avatar_url: '',
     cover_url: '',
   },
   welcome: {
     enabled: false,
     message: emptyLocalized(),
-    show_language_selector: false,
-    show_notice: false,
-  },
-  announcement: {
-    enabled: false,
-    message: emptyLocalized(),
-    image_url: '',
   },
   menu: {
     items: [] as MenuItem[],
@@ -109,7 +97,6 @@ const fetchConfig = async () => {
         form.value.basic.display_name = (basic.display_name as string) ?? ''
         form.value.basic.description = parseLocalized(basic.description)
         form.value.basic.support_url = (basic.support_url as string) ?? ''
-        form.value.basic.avatar_url = (basic.avatar_url as string) ?? ''
         form.value.basic.cover_url = (basic.cover_url as string) ?? ''
       }
 
@@ -117,15 +104,6 @@ const fetchConfig = async () => {
       if (welcome) {
         form.value.welcome.enabled = (welcome.enabled as boolean) ?? false
         form.value.welcome.message = parseLocalized(welcome.message)
-        form.value.welcome.show_language_selector = (welcome.show_language_selector as boolean) ?? false
-        form.value.welcome.show_notice = (welcome.show_notice as boolean) ?? false
-      }
-
-      const announcement = data.announcement as Record<string, unknown> | undefined
-      if (announcement) {
-        form.value.announcement.enabled = (announcement.enabled as boolean) ?? false
-        form.value.announcement.message = parseLocalized(announcement.message)
-        form.value.announcement.image_url = (announcement.image_url as string) ?? ''
       }
 
       const menu = data.menu as Record<string, unknown> | undefined
@@ -152,32 +130,22 @@ const handleSave = async () => {
   }
 }
 
-const handleUpload = async (event: Event, target: 'avatar' | 'cover' | 'announcement') => {
+const handleUploadCover = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
 
-  const loadingRef = target === 'avatar' ? uploadingAvatar : target === 'cover' ? uploadingCover : uploadingAnnouncementImage
-  loadingRef.value = true
+  uploadingCover.value = true
   try {
     const formData = new FormData()
     formData.append('file', file)
     const res = await adminAPI.upload(formData, 'telegram')
     const url = (res.data.data as Record<string, string>)?.url || ''
-    if (target === 'avatar') {
-      form.value.basic.avatar_url = url
-    } else if (target === 'cover') {
-      form.value.basic.cover_url = url
-    } else {
-      form.value.announcement.image_url = url
-    }
+    form.value.basic.cover_url = url
   } catch {
     notifyError(t('telegramBot.settings.uploadFailed'))
   } finally {
-    loadingRef.value = false
-    // Reset file input
-    if (target === 'avatar') avatarFileInput.value && (avatarFileInput.value.value = '')
-    else if (target === 'cover') coverFileInput.value && (coverFileInput.value.value = '')
-    else announcementImageFileInput.value && (announcementImageFileInput.value.value = '')
+    uploadingCover.value = false
+    coverFileInput.value && (coverFileInput.value.value = '')
   }
 }
 
@@ -301,39 +269,20 @@ onMounted(() => {
           <Label>{{ t('telegramBot.settings.supportUrl') }}</Label>
           <Input v-model="form.basic.support_url" :placeholder="t('telegramBot.settings.supportUrlPlaceholder')" />
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <Label>{{ t('telegramBot.settings.avatarUrl') }}</Label>
-            <div
-              class="cursor-pointer rounded-lg border border-dashed border-border p-4 text-center hover:border-primary"
-              @click="avatarFileInput?.click()"
-            >
-              <input ref="avatarFileInput" type="file" class="hidden" accept="image/*" @change="handleUpload($event, 'avatar')" />
-              <div v-if="form.basic.avatar_url" class="space-y-2">
-                <img :src="getImageUrl(form.basic.avatar_url)" class="mx-auto h-20 w-20 rounded-full object-cover" />
-                <div class="text-xs text-muted-foreground">{{ uploadingAvatar ? t('admin.common.loading') : t('telegramBot.settings.clickToReplace') }}</div>
-              </div>
-              <div v-else class="flex flex-col items-center gap-1 py-2">
-                <Upload class="h-5 w-5 text-muted-foreground" />
-                <span class="text-xs text-muted-foreground">{{ t('telegramBot.settings.clickToUpload') }}</span>
-              </div>
+        <div class="space-y-2">
+          <Label>{{ t('telegramBot.settings.coverUrl') }}</Label>
+          <div
+            class="cursor-pointer rounded-lg border border-dashed border-border p-4 text-center hover:border-primary"
+            @click="coverFileInput?.click()"
+          >
+            <input ref="coverFileInput" type="file" class="hidden" accept="image/*" @change="handleUploadCover($event)" />
+            <div v-if="form.basic.cover_url" class="space-y-2">
+              <img :src="getImageUrl(form.basic.cover_url)" class="mx-auto h-24 rounded-lg object-cover" />
+              <div class="text-xs text-muted-foreground">{{ uploadingCover ? t('admin.common.loading') : t('telegramBot.settings.clickToReplace') }}</div>
             </div>
-          </div>
-          <div class="space-y-2">
-            <Label>{{ t('telegramBot.settings.coverUrl') }}</Label>
-            <div
-              class="cursor-pointer rounded-lg border border-dashed border-border p-4 text-center hover:border-primary"
-              @click="coverFileInput?.click()"
-            >
-              <input ref="coverFileInput" type="file" class="hidden" accept="image/*" @change="handleUpload($event, 'cover')" />
-              <div v-if="form.basic.cover_url" class="space-y-2">
-                <img :src="getImageUrl(form.basic.cover_url)" class="mx-auto h-24 rounded-lg object-cover" />
-                <div class="text-xs text-muted-foreground">{{ uploadingCover ? t('admin.common.loading') : t('telegramBot.settings.clickToReplace') }}</div>
-              </div>
-              <div v-else class="flex flex-col items-center gap-1 py-2">
-                <Upload class="h-5 w-5 text-muted-foreground" />
-                <span class="text-xs text-muted-foreground">{{ t('telegramBot.settings.clickToUpload') }}</span>
-              </div>
+            <div v-else class="flex flex-col items-center gap-1 py-2">
+              <Upload class="h-5 w-5 text-muted-foreground" />
+              <span class="text-xs text-muted-foreground">{{ t('telegramBot.settings.clickToUpload') }}</span>
             </div>
           </div>
         </div>
@@ -359,56 +308,6 @@ onMounted(() => {
         <div class="space-y-2">
           <Label>{{ t('telegramBot.settings.welcomeMessage') }}</Label>
           <Textarea v-model="form.welcome.message[currentLang]" :placeholder="t('telegramBot.settings.welcomeMessagePlaceholder')" rows="3" />
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <input id="show-lang-selector" v-model="form.welcome.show_language_selector" type="checkbox" class="h-4 w-4 accent-primary" />
-            <Label for="show-lang-selector">{{ t('telegramBot.settings.showLanguageSelector') }}</Label>
-          </div>
-          <div class="flex items-center gap-2">
-            <input id="show-notice" v-model="form.welcome.show_notice" type="checkbox" class="h-4 w-4 accent-primary" />
-            <Label for="show-notice">{{ t('telegramBot.settings.showNotice') }}</Label>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <!-- 公告设置 -->
-    <Card>
-      <CardHeader>
-        <div class="flex items-center justify-between">
-          <div>
-            <CardTitle>{{ t('telegramBot.settings.announcementTitle') }}</CardTitle>
-            <CardDescription>{{ t('telegramBot.settings.announcementDesc') }}</CardDescription>
-          </div>
-          <span class="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">{{ currentLang }}</span>
-        </div>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <div class="flex items-center gap-2">
-          <input id="announcement-enabled" v-model="form.announcement.enabled" type="checkbox" class="h-4 w-4 accent-primary" />
-          <Label for="announcement-enabled">{{ t('telegramBot.settings.announcementEnabled') }}</Label>
-        </div>
-        <div class="space-y-2">
-          <Label>{{ t('telegramBot.settings.announcementMessage') }}</Label>
-          <Textarea v-model="form.announcement.message[currentLang]" :placeholder="t('telegramBot.settings.announcementMessagePlaceholder')" rows="3" />
-        </div>
-        <div class="space-y-2">
-          <Label>{{ t('telegramBot.settings.announcementImage') }}</Label>
-          <div
-            class="cursor-pointer rounded-lg border border-dashed border-border p-4 text-center hover:border-primary"
-            @click="announcementImageFileInput?.click()"
-          >
-            <input ref="announcementImageFileInput" type="file" class="hidden" accept="image/*" @change="handleUpload($event, 'announcement')" />
-            <div v-if="form.announcement.image_url" class="space-y-2">
-              <img :src="getImageUrl(form.announcement.image_url)" class="mx-auto h-32 rounded-lg object-cover" />
-              <div class="text-xs text-muted-foreground">{{ uploadingAnnouncementImage ? t('admin.common.loading') : t('telegramBot.settings.clickToReplace') }}</div>
-            </div>
-            <div v-else class="flex flex-col items-center gap-1 py-2">
-              <Upload class="h-5 w-5 text-muted-foreground" />
-              <span class="text-xs text-muted-foreground">{{ t('telegramBot.settings.clickToUpload') }}</span>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
