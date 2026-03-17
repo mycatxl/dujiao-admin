@@ -10,13 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { confirmAction } from '@/utils/confirm'
 import { notifyError, notifySuccess } from '@/utils/notify'
 import { getLocalizedText } from '@/utils/format'
+import { buildAdminCategoryPath, createAdminCategoryChildCountMap, createAdminCategoryMap, flattenAdminCategories, isAdminProductCategorySelectable } from '@/utils/category'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const loading = ref(true)
 const mappings = ref<(AdminProductMapping & { product?: AdminProduct })[]>([])
 const connections = ref<AdminSiteConnection[]>([])
 const categories = ref<AdminCategory[]>([])
+const categoryMap = computed(() => createAdminCategoryMap(categories.value))
+const categoryChildCountMap = computed(() => createAdminCategoryChildCountMap(categories.value))
+const categoryOptions = computed(() => flattenAdminCategories(categories.value).map((item) => ({
+  ...item,
+  selectable: isAdminProductCategorySelectable(item.category, categoryChildCountMap.value),
+})))
 const pagination = reactive({ page: 1, page_size: 20, total: 0, total_page: 1 })
 const jumpPage = ref('')
 const filters = reactive({ connection_id: '__all__' })
@@ -108,6 +115,24 @@ const formatSpecValues = (specValues: Record<string, string> | undefined | null)
 const getConnectionName = (connectionId: number) => {
   const conn = connections.value.find((c) => c.id === connectionId)
   return conn?.name || `#${connectionId}`
+}
+
+const getCategoryOptionLabel = (category: AdminCategory) => {
+  return buildAdminCategoryPath(category, categoryMap.value, (item) => getLocalizedText(item.name))
+}
+
+const getCategoryOptionName = (category: AdminCategory) => {
+  return getLocalizedText(category.name)
+}
+
+const getCategoryLeafTip = () => {
+  if (locale.value === 'en-US') {
+    return 'Root categories with child categories cannot receive products directly. Prefer a leaf category.'
+  }
+  if (locale.value === 'zh-TW') {
+    return '已有二級分類的一級分類不能直接掛商品，請優先選擇末級分類'
+  }
+  return '已有二级分类的一级分类不能直接挂商品，请优先选择末级分类'
 }
 
 // --- Detail expand ---
@@ -569,9 +594,18 @@ onMounted(() => { fetchConnections(); fetchCategories(); fetchMappings() })
                 <SelectTrigger class="h-9 w-full"><SelectValue :placeholder="t('productMappings.import.categoryPlaceholder')" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">{{ t('productMappings.import.noCategory') }}</SelectItem>
-                  <SelectItem v-for="cat in categories" :key="cat.id" :value="String(cat.id)">{{ getLocalizedText(cat.name) }}</SelectItem>
+                  <SelectItem
+                    v-for="item in categoryOptions"
+                    :key="item.category.id"
+                    :value="String(item.category.id)"
+                    :disabled="!item.selectable"
+                    :class="item.depth > 0 ? 'pl-6' : ''"
+                  >
+                    {{ item.depth > 0 ? getCategoryOptionName(item.category) : getCategoryOptionLabel(item.category) }}
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              <p class="mt-1 text-xs text-muted-foreground">{{ getCategoryLeafTip() }}</p>
             </div>
           </div>
 

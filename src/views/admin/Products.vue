@@ -16,6 +16,7 @@ import { notifyError } from '@/utils/notify'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 import { confirmAction } from '@/utils/confirm'
 import ProductEditModal from './components/ProductEditModal.vue'
+import { buildAdminCategoryPath, createAdminCategoryMap, flattenAdminCategories } from '@/utils/category'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -30,6 +31,8 @@ const editingProductId = ref<number | null>(null)
 
 const products = ref<AdminProduct[]>([])
 const categories = ref<AdminCategory[]>([])
+const categoryMap = ref(new Map<number, AdminCategory>())
+const orderedCategories = ref<AdminCategory[]>([])
 const pagination = reactive({
   page: 1,
   page_size: 10,
@@ -156,9 +159,18 @@ const fetchCategories = async () => {
   try {
     const res = await adminAPI.getCategories({ type: 'product' })
     categories.value = res.data.data || []
+    categoryMap.value = createAdminCategoryMap(categories.value)
+    orderedCategories.value = flattenAdminCategories(categories.value).map((item) => item.category)
   } catch (err) {
     categories.value = []
+    categoryMap.value = new Map()
+    orderedCategories.value = []
   }
+}
+
+const getProductCategoryLabel = (category?: AdminCategory) => {
+  if (!category) return ''
+  return buildAdminCategoryPath(category, categoryMap.value, (item) => getLocalizedText(item.name))
 }
 
 const fetchSiteCurrency = async () => {
@@ -379,7 +391,7 @@ watch(
             <TableCell class="px-6 py-4 font-mono text-foreground">{{ formatPrice(product.price_amount, siteCurrency) }}</TableCell>
             <TableCell class="px-6 py-4">
               <span v-if="product.category" class="rounded-full border border-border px-2 py-1 text-xs text-muted-foreground">
-                {{ getLocalizedText(product.category.name) }}
+                {{ getProductCategoryLabel(product.category) }}
               </span>
               <span v-else class="text-xs text-muted-foreground">{{ t('admin.products.uncategorized') }}</span>
             </TableCell>
@@ -445,7 +457,7 @@ watch(
     <ProductEditModal
       v-model="showModal"
       :product-id="editingProductId"
-      :categories="categories"
+      :categories="orderedCategories"
       :site-currency="siteCurrency"
       :supported-locales="['zh-CN', 'zh-TW', 'en-US']"
       @success="handleModalSuccess"

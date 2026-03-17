@@ -12,6 +12,7 @@ import { Dialog, DialogScrollContent, DialogHeader, DialogTitle } from '@/compon
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { notifyError } from '@/utils/notify'
 import { getLocalizedText } from '@/utils/format'
+import { buildAdminCategoryPath, createAdminCategoryChildCountMap, createAdminCategoryMap, flattenAdminCategories, isAdminProductCategorySelectable } from '@/utils/category'
 
 const props = defineProps<{
   modelValue: boolean
@@ -26,11 +27,12 @@ const emit = defineEmits<{
   success: []
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const uploading = ref(false)
 const submitting = ref(false)
 const isEditing = ref(false)
 const editingIsMapped = ref(false)
+const initialCategoryID = ref<number | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const newTag = ref('')
 const currentLang = ref('zh-CN')
@@ -40,6 +42,48 @@ const languages = computed(() => [
   { code: 'zh-TW', name: t('admin.common.lang.zhTW') },
   { code: 'en-US', name: t('admin.common.lang.enUS') },
 ])
+
+const categoryMap = computed(() => createAdminCategoryMap(props.categories))
+const categoryChildCountMap = computed(() => createAdminCategoryChildCountMap(props.categories))
+const categoryOptions = computed(() => flattenAdminCategories(props.categories).map((item) => ({
+  ...item,
+  selectable: isProductCategorySelectable(item.category.id),
+})))
+
+const getCategoryOptionLabel = (category: AdminCategory) => {
+  return buildAdminCategoryPath(category, categoryMap.value, (item) => getLocalizedText(item.name))
+}
+
+const getCategoryOptionName = (category: AdminCategory) => {
+  return getLocalizedText(category.name)
+}
+
+const getCategoryLeafTip = () => {
+  if (locale.value === 'en-US') {
+    return 'Root categories with child categories cannot receive products directly. Choose a leaf category.'
+  }
+  if (locale.value === 'zh-TW') {
+    return '已有二級分類的一級分類不能直接掛商品，請選擇末級分類'
+  }
+  return '已有二级分类的一级分类不能直接挂商品，请选择末级分类'
+}
+
+const getCategoryRequiredError = () => {
+  if (locale.value === 'en-US') return 'Please select a category'
+  if (locale.value === 'zh-TW') return '請選擇商品分類'
+  return '请选择商品分类'
+}
+
+const isProductCategorySelectable = (categoryID: number | null | undefined) => {
+  const normalizedCategoryID = Number(categoryID)
+  if (!Number.isFinite(normalizedCategoryID) || normalizedCategoryID <= 0) return false
+
+  const exactCategoryID = Math.floor(normalizedCategoryID)
+  const category = categoryMap.value.get(exactCategoryID)
+  if (!category) return false
+
+  return isAdminProductCategorySelectable(category, categoryChildCountMap.value) || initialCategoryID.value === exactCategoryID
+}
 
 type SKUFormItem = {
   id: number
@@ -385,6 +429,7 @@ const isTextLikeField = (fieldType: string) => {
 }
 
 const resetForm = () => {
+  initialCategoryID.value = null
   Object.assign(form, {
     id: 0,
     title: { 'zh-CN': '', 'zh-TW': '', 'en-US': '' },
@@ -409,6 +454,7 @@ const resetForm = () => {
 }
 
 const populateForm = (product: AdminProduct) => {
+  initialCategoryID.value = Number(product.category_id || 0) || null
   let imagesList: string[] = []
   if (product.images) {
     if (Array.isArray(product.images)) {
@@ -457,6 +503,14 @@ const closeModal = () => {
 const handleSubmit = async () => {
   submitting.value = true
   try {
+    const normalizedCategoryID = Number(form.category_id)
+    if (!Number.isFinite(normalizedCategoryID) || normalizedCategoryID <= 0) {
+      throw new Error(getCategoryRequiredError())
+    }
+    if (!isProductCategorySelectable(normalizedCategoryID)) {
+      throw new Error(getCategoryLeafTip())
+    }
+
     const normalizedSKUs = normalizeSKUsForSubmit()
     const activeSKU = normalizedSKUs.find((item) => item.is_active)
     let effectivePrice = Number(form.price_amount)
@@ -477,7 +531,7 @@ const handleSubmit = async () => {
 
     const payload = {
       slug: String(form.slug || '').trim(),
-      category_id: Number(form.category_id),
+      category_id: Math.floor(normalizedCategoryID),
       seo_meta: form.seo_meta,
       title: form.title,
       description: form.description,
@@ -668,11 +722,18 @@ watch(
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">{{ t('admin.products.form.categoryPlaceholder') }}</SelectItem>
-                <SelectItem v-for="cat in categories" :key="cat.id" :value="String(cat.id)">
-                  {{ getLocalizedText(cat.name) }}
+                <SelectItem
+                  v-for="item in categoryOptions"
+                  :key="item.category.id"
+                  :value="String(item.category.id)"
+                  :disabled="!item.selectable"
+                  :class="item.depth > 0 ? 'pl-6' : ''"
+                >
+                  {{ item.depth > 0 ? getCategoryOptionName(item.category) : getCategoryOptionLabel(item.category) }}
                 </SelectItem>
               </SelectContent>
             </Select>
+            <p class="mt-1 text-xs text-muted-foreground">{{ getCategoryLeafTip() }}</p>
           </div>
 
           <div class="col-span-1">

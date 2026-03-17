@@ -8,12 +8,14 @@ import IdCell from '@/components/IdCell.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogScrollContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 import { getLocalizedText } from '@/utils/format'
 import { getImageUrl } from '@/utils/image'
 import { notifyError } from '@/utils/notify'
 import { confirmAction } from '@/utils/confirm'
+import { buildAdminCategoryPath, createAdminCategoryMap, flattenAdminCategories } from '@/utils/category'
 import { useFormValidation, rules } from '@/composables/useFormValidation'
 
 const { t } = useI18n()
@@ -35,11 +37,45 @@ const languages = computed(() => [
 
 const form = reactive({
   id: 0,
+  parent_id: 0,
   name: { 'zh-CN': '', 'zh-TW': '', 'en-US': '' } as LocalizedText,
   slug: '',
   icon: '',
   sort_order: 0,
 })
+
+const categoryMap = computed(() => createAdminCategoryMap(categories.value))
+const categoryHierarchyItems = computed(() => flattenAdminCategories(categories.value))
+
+const hasChildren = (categoryId: number) => categories.value.some((item) => item.parent_id === categoryId)
+
+const canChooseParent = computed(() => {
+  if (!isEditing.value || form.id <= 0) return true
+  const current = categoryMap.value.get(form.id)
+  if (!current) return true
+  if (current.parent_id > 0) return true
+  return !hasChildren(current.id)
+})
+
+const parentCategoryOptions = computed(() => {
+  const roots = categoryHierarchyItems.value
+    .filter((item) => item.depth === 0 && item.category.id !== form.id)
+    .map((item) => item.category)
+
+  if (!canChooseParent.value) {
+    return []
+  }
+
+  return roots
+})
+
+const getCategoryLevelText = (category: AdminCategory) => {
+  return category.parent_id > 0 ? t('admin.categories.level.child') : t('admin.categories.level.root')
+}
+
+const getCategoryPath = (category: AdminCategory) => {
+  return buildAdminCategoryPath(category, categoryMap.value, (item) => getLocalizedText(item.name))
+}
 
 const { errors, validate, clearErrors } = useFormValidation({
   slug: [rules.required('This field is required')],
@@ -68,6 +104,7 @@ const openCreateModal = () => {
   clearErrors()
   Object.assign(form, {
     id: 0,
+    parent_id: 0,
     name: { 'zh-CN': '', 'zh-TW': '', 'en-US': '' },
     slug: '',
     icon: '',
@@ -85,6 +122,7 @@ const openEditModal = (category: AdminCategory) => {
 
   Object.assign(form, {
     id: category.id,
+    parent_id: category.parent_id || 0,
     name,
     slug: category.slug,
     icon: category.icon || '',
@@ -215,21 +253,36 @@ watch(
           <TableRow v-else-if="categories.length === 0">
             <TableCell colspan="6" class="px-6 py-8 text-center text-muted-foreground">{{ t('admin.categories.empty') }}</TableCell>
           </TableRow>
-          <TableRow v-for="category in categories" :key="category.id" class="hover:bg-muted/30">
+          <TableRow v-for="item in categoryHierarchyItems" :key="item.category.id" class="hover:bg-muted/30">
             <TableCell class="px-6 py-4">
-              <IdCell :value="category.id" />
+              <IdCell :value="item.category.id" />
             </TableCell>
             <TableCell class="px-6 py-4">
-              <img v-if="category.icon" :src="getImageUrl(category.icon)" class="h-8 w-8 rounded object-cover" :alt="getLocalizedText(category.name)" />
+              <img v-if="item.category.icon" :src="getImageUrl(item.category.icon)" class="h-8 w-8 rounded object-cover" :alt="getLocalizedText(item.category.name)" />
               <span v-else class="text-xs text-muted-foreground">-</span>
             </TableCell>
-            <TableCell class="px-6 py-4 font-medium text-foreground">{{ getLocalizedText(category.name) }}</TableCell>
-            <TableCell class="px-6 py-4 font-mono text-muted-foreground">{{ category.slug }}</TableCell>
-            <TableCell class="px-6 py-4 font-mono text-muted-foreground">{{ category.sort_order }}</TableCell>
+            <TableCell class="px-6 py-4">
+              <div class="space-y-1" :class="item.depth > 0 ? 'pl-6' : ''">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-flex rounded-full border px-2 py-0.5 text-[11px]"
+                    :class="item.depth > 0 ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-border bg-muted/30 text-muted-foreground'"
+                  >
+                    {{ getCategoryLevelText(item.category) }}
+                  </span>
+                  <span class="font-medium text-foreground">{{ getLocalizedText(item.category.name) }}</span>
+                </div>
+                <div v-if="item.parent" class="text-xs text-muted-foreground">
+                  {{ t('admin.categories.table.parentPrefix', { name: getLocalizedText(item.parent.name) }) }}
+                </div>
+              </div>
+            </TableCell>
+            <TableCell class="px-6 py-4 font-mono text-muted-foreground">{{ item.category.slug }}</TableCell>
+            <TableCell class="px-6 py-4 font-mono text-muted-foreground">{{ item.category.sort_order }}</TableCell>
             <TableCell class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-2">
-                <Button size="sm" variant="outline" @click="openEditModal(category)">{{ t('admin.categories.actions.edit') }}</Button>
-                <Button size="sm" variant="destructive" @click="handleDelete(category)">{{ t('admin.categories.actions.delete') }}</Button>
+                <Button size="sm" variant="outline" @click="openEditModal(item.category)">{{ t('admin.categories.actions.edit') }}</Button>
+                <Button size="sm" variant="destructive" @click="handleDelete(item.category)">{{ t('admin.categories.actions.delete') }}</Button>
               </div>
             </TableCell>
           </TableRow>
@@ -268,6 +321,27 @@ watch(
             <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.categories.form.slug') }}</label>
             <Input v-model="form.slug" :placeholder="t('admin.categories.form.slugPlaceholder')" />
             <p v-if="errors.slug" class="text-xs text-destructive mt-1">{{ errors.slug }}</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.categories.form.parent') }}</label>
+            <Select
+              :model-value="String(form.parent_id || 0)"
+              @update:modelValue="(value) => { form.parent_id = Number(value || 0) || 0 }"
+            >
+              <SelectTrigger class="h-9 w-full">
+                <SelectValue :placeholder="t('admin.categories.form.parentPlaceholder')" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">{{ t('admin.categories.form.parentRoot') }}</SelectItem>
+                <SelectItem v-for="category in parentCategoryOptions" :key="category.id" :value="String(category.id)">
+                  {{ getCategoryPath(category) }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p class="text-xs text-muted-foreground mt-1">
+              {{ canChooseParent ? t('admin.categories.form.parentTip') : t('admin.categories.form.parentLockedTip') }}
+            </p>
           </div>
 
           <div>

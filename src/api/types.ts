@@ -16,6 +16,7 @@ export type LocalizedText = Record<string, string>
 // --- Category ---
 export interface AdminCategory {
   id: number
+  parent_id: number
   slug: string
   name: LocalizedText
   icon: string
