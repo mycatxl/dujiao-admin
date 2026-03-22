@@ -31,7 +31,6 @@ const fulfillmentSubmitting = ref(false)
 const fulfillmentError = ref('')
 const fulfillmentSuccess = ref('')
 const fulfillmentForm = reactive({
-  payload: '',
   note: '',
   entries: [] as Array<{ key: string; value: string }>,
 })
@@ -66,14 +65,11 @@ const buildDeliveryDataPayload = () => {
 }
 
 const hasFulfillmentSubmitData = () => {
-  const payloadText = String(fulfillmentForm.payload || '').trim()
-  if (payloadText) return true
   const data = buildDeliveryDataPayload()
-  return Boolean(data.note || (Array.isArray(data.entries) && data.entries.length > 0))
+  return Object.keys(data).length > 0
 }
 
 const resetFulfillmentForm = () => {
-  fulfillmentForm.payload = ''
   fulfillmentForm.note = ''
   fulfillmentForm.entries = [createEmptyDeliveryEntry()]
   fulfillmentError.value = ''
@@ -106,7 +102,6 @@ const submitFulfillment = async () => {
   try {
     await adminAPI.createFulfillment({
       order_id: Number(selectedOrder.value.id),
-      payload: String(fulfillmentForm.payload || '').trim(),
       delivery_data: buildDeliveryDataPayload(),
     })
     fulfillmentSuccess.value = t('admin.orders.fulfillmentSuccess')
@@ -205,16 +200,6 @@ watch(
                   </Button>
                 </div>
               </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.orders.fulfillmentPayload') }}</label>
-              <Textarea
-                v-model="fulfillmentForm.payload"
-                rows="3"
-                :placeholder="t('admin.orders.fulfillmentPayloadPlaceholder')"
-              />
-              <p class="mt-1 text-xs text-muted-foreground">{{ t('admin.orders.fulfillmentPayloadTip') }}</p>
             </div>
 
             <div v-if="fulfillmentError" class="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
