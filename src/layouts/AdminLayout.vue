@@ -128,6 +128,12 @@ const navGroups = computed<NavGroup[]>(() => {
           icon: KeyRound,
           permission: 'GET:/admin/card-secrets',
         },
+        {
+          label: t('admin.navItems.cardSecretImports'),
+          to: '/card-secret-imports',
+          icon: KeyRound,
+          permission: 'GET:/admin/card-secrets',
+        },
       ],
     },
     {

@@ -183,18 +183,30 @@ export interface AdminRefundToWalletPayload {
 export interface AdminBatchCardSecretStatusPayload {
   ids?: number[]
   batch_id?: number
+  filter?: AdminCardSecretQueryPayload
   status: 'available' | 'reserved' | 'used'
 }
 
 export interface AdminBatchCardSecretDeletePayload {
   ids?: number[]
   batch_id?: number
+  filter?: AdminCardSecretQueryPayload
 }
 
 export interface AdminExportCardSecretsPayload {
   ids?: number[]
   batch_id?: number
+  filter?: AdminCardSecretQueryPayload
   format: 'txt' | 'csv'
+}
+
+export interface AdminCardSecretQueryPayload {
+  product_id?: number
+  sku_id?: number
+  batch_id?: number
+  status?: string
+  secret?: string
+  batch_no?: string
 }
 
 export type AdminGiftCardStatus = 'active' | 'redeemed' | 'disabled'

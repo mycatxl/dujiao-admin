@@ -1,9 +1,14 @@
 import i18n from '@/i18n'
-import { useConfirmStore, type ConfirmDialogOptions, type ConfirmDialogVariant } from '@/stores/confirm'
+import {
+  useConfirmStore,
+  type ConfirmDialogDescriptionSegment,
+  type ConfirmDialogOptions,
+  type ConfirmDialogVariant,
+} from '@/stores/confirm'
 
 export interface ConfirmActionOptions {
   title?: string
-  description: string
+  description: string | ConfirmDialogDescriptionSegment[]
   confirmText?: string
   cancelText?: string
   variant?: ConfirmDialogVariant

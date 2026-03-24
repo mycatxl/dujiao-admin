@@ -2,10 +2,17 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 export type ConfirmDialogVariant = 'default' | 'destructive'
+export type ConfirmDialogDescriptionTone = 'default' | 'danger' | 'muted'
+
+export interface ConfirmDialogDescriptionSegment {
+  text: string
+  tone?: ConfirmDialogDescriptionTone
+  strong?: boolean
+}
 
 export interface ConfirmDialogOptions {
   title: string
-  description: string
+  description: string | ConfirmDialogDescriptionSegment[]
   confirmText: string
   cancelText: string
   variant: ConfirmDialogVariant

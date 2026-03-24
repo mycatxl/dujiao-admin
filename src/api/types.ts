@@ -183,6 +183,7 @@ export interface AdminCardSecretBatch {
   note?: string
   total_count: number
   available_count: number
+  reserved_count: number
   used_count: number
   created_at: string
 }
