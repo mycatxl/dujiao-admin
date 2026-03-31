@@ -284,6 +284,7 @@ const dashboardForm = reactive({
 
 const walletForm = reactive({
   recharge_channel_ids: [] as number[],
+  wallet_only_payment: false,
 })
 const walletPaymentChannels = ref<AdminPaymentChannel[]>([])
 const walletSaving = ref(false)
@@ -306,8 +307,10 @@ const loadWalletConfig = async () => {
     } else {
       walletForm.recharge_channel_ids = []
     }
+    walletForm.wallet_only_payment = !!data?.wallet_only_payment
   } catch {
     walletForm.recharge_channel_ids = []
+    walletForm.wallet_only_payment = false
   }
 }
 
@@ -323,7 +326,7 @@ const loadWalletPaymentChannels = async () => {
 const saveWalletConfig = async () => {
   walletSaving.value = true
   try {
-    await adminAPI.updateSettings({ key: 'wallet_config', value: { recharge_channel_ids: walletForm.recharge_channel_ids } } as any)
+    await adminAPI.updateSettings({ key: 'wallet_config', value: { recharge_channel_ids: walletForm.recharge_channel_ids, wallet_only_payment: walletForm.wallet_only_payment } } as any)
     notifySuccess(t('admin.settings.saved'))
   } catch (err: any) {
     notifyError(err?.message || t('admin.settings.saveFailed'))
@@ -1227,7 +1230,14 @@ watch(currentTab, (newTab) => {
           <p class="mt-1 text-xs text-muted-foreground">{{ t('admin.settings.wallet.subtitle') }}</p>
         </div>
         <div class="space-y-4 p-6">
-          <div>
+          <div class="flex items-center justify-between">
+            <div>
+              <label for="wallet-only-payment" class="text-sm font-medium">{{ t('admin.settings.wallet.walletOnlyPayment') }}</label>
+              <p class="text-xs text-muted-foreground mt-0.5">{{ t('admin.settings.wallet.walletOnlyPaymentTip') }}</p>
+            </div>
+            <input id="wallet-only-payment" v-model="walletForm.wallet_only_payment" type="checkbox" class="h-4 w-4 accent-primary" />
+          </div>
+          <div class="border-t border-border pt-4">
             <label class="block text-xs font-medium text-muted-foreground mb-2">{{ t('admin.settings.wallet.rechargeChannels') }}</label>
             <div v-if="walletPaymentChannels.length > 0" class="flex flex-wrap gap-2">
               <label v-for="ch in walletPaymentChannels" :key="ch.id" class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs cursor-pointer select-none" :class="walletForm.recharge_channel_ids.includes(ch.id) ? 'bg-primary/10 border-primary text-primary' : 'text-muted-foreground hover:border-primary/40'">

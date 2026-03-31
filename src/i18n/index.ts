@@ -1995,6 +1995,8 @@ const messages = {
       settings: {
         title: '系统设置',
         subtitle: '管理网站全局配置、SEO及法律条款',
+        saved: '设置已保存',
+        saveFailed: '保存失败',
         actions: {
           save: '保存更改',
           saving: '保存中...',
@@ -2020,6 +2022,8 @@ const messages = {
         wallet: {
           title: '钱包配置',
           subtitle: '管理钱包充值相关设置',
+          walletOnlyPayment: '仅允许钱包余额支付',
+          walletOnlyPaymentTip: '开启后用户只能使用钱包余额支付订单，需先充值钱包',
           rechargeChannels: '充值允许的支付渠道',
           rechargeChannelsTip: '不选择则使用全部支付渠道进行充值',
           noChannels: '暂无可用的支付渠道',
@@ -4883,6 +4887,8 @@ const messages = {
       settings: {
         title: '系統設定',
         subtitle: '管理網站全局配置、SEO及法律條款',
+        saved: '設定已儲存',
+        saveFailed: '儲存失敗',
         actions: {
           save: '保存更改',
           saving: '保存中...',
@@ -4908,6 +4914,8 @@ const messages = {
         wallet: {
           title: '錢包配置',
           subtitle: '管理錢包儲值相關設定',
+          walletOnlyPayment: '僅允許錢包餘額支付',
+          walletOnlyPaymentTip: '開啟後用戶只能使用錢包餘額支付訂單，需先儲值錢包',
           rechargeChannels: '儲值允許的支付渠道',
           rechargeChannelsTip: '不選擇則使用全部支付渠道進行儲值',
           noChannels: '暫無可用的支付渠道',
@@ -7771,6 +7779,8 @@ const messages = {
       settings: {
         title: 'Settings',
         subtitle: 'Manage site config, SEO and legal documents',
+        saved: 'Settings saved',
+        saveFailed: 'Failed to save',
         actions: {
           save: 'Save changes',
           saving: 'Saving...',
@@ -7796,6 +7806,8 @@ const messages = {
         wallet: {
           title: 'Wallet Config',
           subtitle: 'Manage wallet recharge settings',
+          walletOnlyPayment: 'Wallet balance only payment',
+          walletOnlyPaymentTip: 'When enabled, users can only pay with wallet balance and must recharge first',
           rechargeChannels: 'Recharge allowed payment channels',
           rechargeChannelsTip: 'Leave unselected to use all payment channels for recharge',
           noChannels: 'No available payment channels',
