@@ -50,6 +50,8 @@ const epayConfig = reactive({
   platform_public_key: '',
   notify_url: '',
   return_url: '',
+  target_currency: '',
+  exchange_rate: '',
 })
 
 const paypalConfig = reactive({
@@ -73,6 +75,8 @@ const stripeConfig = reactive({
   cancel_url: '',
   api_base_url: 'https://api.stripe.com',
   payment_method_types: 'card',
+  target_currency: '',
+  exchange_rate: '',
 })
 
 const alipayConfig = reactive({
@@ -85,6 +89,8 @@ const alipayConfig = reactive({
   sign_type: 'RSA2',
   app_cert_sn: '',
   alipay_root_cert_sn: '',
+  target_currency: '',
+  exchange_rate: '',
 })
 
 const wechatConfig = reactive({
@@ -98,6 +104,8 @@ const wechatConfig = reactive({
   h5_type: 'WAP',
   h5_wap_url: '',
   h5_wap_name: '',
+  target_currency: '',
+  exchange_rate: '',
 })
 
 const epusdtConfig = reactive({
@@ -242,6 +250,8 @@ const resetEpayConfig = () => {
   epayConfig.platform_public_key = ''
   epayConfig.notify_url = ''
   epayConfig.return_url = ''
+  epayConfig.target_currency = ''
+  epayConfig.exchange_rate = ''
 }
 
 const resetPaypalConfig = () => {
@@ -265,6 +275,8 @@ const resetStripeConfig = () => {
   stripeConfig.cancel_url = ''
   stripeConfig.api_base_url = 'https://api.stripe.com'
   stripeConfig.payment_method_types = 'card'
+  stripeConfig.target_currency = ''
+  stripeConfig.exchange_rate = ''
 }
 
 const resetAlipayConfig = () => {
@@ -277,6 +289,8 @@ const resetAlipayConfig = () => {
   alipayConfig.sign_type = 'RSA2'
   alipayConfig.app_cert_sn = ''
   alipayConfig.alipay_root_cert_sn = ''
+  alipayConfig.target_currency = ''
+  alipayConfig.exchange_rate = ''
 }
 
 const resetWechatConfig = () => {
@@ -290,6 +304,8 @@ const resetWechatConfig = () => {
   wechatConfig.h5_type = 'WAP'
   wechatConfig.h5_wap_url = ''
   wechatConfig.h5_wap_name = ''
+  wechatConfig.target_currency = ''
+  wechatConfig.exchange_rate = ''
 }
 
 const resetEpusdtConfig = () => {
@@ -343,6 +359,8 @@ const applyEpayConfig = (raw: Record<string, unknown>) => {
   epayConfig.platform_public_key = String(raw.platform_public_key || '')
   epayConfig.notify_url = String(raw.notify_url || '')
   epayConfig.return_url = String(raw.return_url || '')
+  epayConfig.target_currency = String(raw.target_currency || '')
+  epayConfig.exchange_rate = String(raw.exchange_rate || '')
 }
 
 const applyPaypalConfig = (raw: Record<string, unknown>) => {
@@ -369,6 +387,8 @@ const applyStripeConfig = (raw: Record<string, unknown>) => {
     ? (raw.payment_method_types as unknown[]).map((item) => String(item || '').trim()).filter(Boolean)
     : []
   stripeConfig.payment_method_types = methodTypes.length > 0 ? methodTypes.join(',') : 'card'
+  stripeConfig.target_currency = String(raw.target_currency || '')
+  stripeConfig.exchange_rate = String(raw.exchange_rate || '')
 }
 
 const applyAlipayConfig = (raw: Record<string, unknown>) => {
@@ -381,6 +401,8 @@ const applyAlipayConfig = (raw: Record<string, unknown>) => {
   alipayConfig.sign_type = String(raw.sign_type || 'RSA2').toUpperCase()
   alipayConfig.app_cert_sn = String(raw.app_cert_sn || '')
   alipayConfig.alipay_root_cert_sn = String(raw.alipay_root_cert_sn || '')
+  alipayConfig.target_currency = String(raw.target_currency || '')
+  alipayConfig.exchange_rate = String(raw.exchange_rate || '')
 }
 
 const applyWechatConfig = (raw: Record<string, unknown>) => {
@@ -394,6 +416,8 @@ const applyWechatConfig = (raw: Record<string, unknown>) => {
   wechatConfig.h5_type = String(raw.h5_type || 'WAP').toUpperCase()
   wechatConfig.h5_wap_url = String(raw.h5_wap_url || '')
   wechatConfig.h5_wap_name = String(raw.h5_wap_name || '')
+  wechatConfig.target_currency = String(raw.target_currency || '')
+  wechatConfig.exchange_rate = String(raw.exchange_rate || '')
 }
 
 const applyEpusdtConfig = (raw: Record<string, unknown>) => {
@@ -445,6 +469,8 @@ const buildEpayConfig = () => {
     setIfNotEmpty('private_key', epayConfig.private_key)
     setIfNotEmpty('platform_public_key', epayConfig.platform_public_key)
   }
+  setIfNotEmpty('target_currency', epayConfig.target_currency)
+  setIfNotEmpty('exchange_rate', epayConfig.exchange_rate)
   return config
 }
 
@@ -490,6 +516,8 @@ const buildStripeConfig = () => {
   if (methodTypes.length > 0) {
     config.payment_method_types = methodTypes
   }
+  setIfNotEmpty('target_currency', stripeConfig.target_currency)
+  setIfNotEmpty('exchange_rate', stripeConfig.exchange_rate)
   return config
 }
 
@@ -510,6 +538,8 @@ const buildAlipayConfig = () => {
   setIfNotEmpty('sign_type', alipayConfig.sign_type)
   setIfNotEmpty('app_cert_sn', alipayConfig.app_cert_sn)
   setIfNotEmpty('alipay_root_cert_sn', alipayConfig.alipay_root_cert_sn)
+  setIfNotEmpty('target_currency', alipayConfig.target_currency)
+  setIfNotEmpty('exchange_rate', alipayConfig.exchange_rate)
   return config
 }
 
@@ -531,6 +561,8 @@ const buildWechatConfig = () => {
   setIfNotEmpty('h5_type', wechatConfig.h5_type)
   setIfNotEmpty('h5_wap_url', wechatConfig.h5_wap_url)
   setIfNotEmpty('h5_wap_name', wechatConfig.h5_wap_name)
+  setIfNotEmpty('target_currency', wechatConfig.target_currency)
+  setIfNotEmpty('exchange_rate', wechatConfig.exchange_rate)
   return config
 }
 
@@ -943,6 +975,14 @@ const closeModal = () => {
               <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.returnUrl') }}</label>
               <Input v-model="epayConfig.return_url" :placeholder="t('admin.paymentChannels.modal.returnUrlPlaceholder')" />
             </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.targetCurrency') }}</label>
+              <Input v-model="epayConfig.target_currency" :placeholder="t('admin.paymentChannels.modal.targetCurrencyPlaceholder')" />
+            </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.exchangeRate') }}</label>
+              <Input v-model="epayConfig.exchange_rate" :placeholder="t('admin.paymentChannels.modal.exchangeRatePlaceholder')" />
+            </div>
           </div>
           <div class="mt-3 text-xs text-muted-foreground">{{ t('admin.paymentChannels.modal.epayHint') }}</div>
         </div>
@@ -1025,6 +1065,14 @@ const closeModal = () => {
               <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.stripePaymentMethodTypes') }}</label>
               <Input v-model="stripeConfig.payment_method_types" :placeholder="t('admin.paymentChannels.modal.stripePaymentMethodTypesPlaceholder')" />
             </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.targetCurrency') }}</label>
+              <Input v-model="stripeConfig.target_currency" :placeholder="t('admin.paymentChannels.modal.targetCurrencyPlaceholder')" />
+            </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.exchangeRate') }}</label>
+              <Input v-model="stripeConfig.exchange_rate" :placeholder="t('admin.paymentChannels.modal.exchangeRatePlaceholder')" />
+            </div>
           </div>
           <div class="mt-3 text-xs text-muted-foreground">{{ t('admin.paymentChannels.modal.stripeHint') }}</div>
         </div>
@@ -1072,6 +1120,14 @@ const closeModal = () => {
               <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.wechatH5WapName') }}</label>
               <Input v-model="wechatConfig.h5_wap_name" :placeholder="t('admin.paymentChannels.modal.wechatH5WapNamePlaceholder')" />
             </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.targetCurrency') }}</label>
+              <Input v-model="wechatConfig.target_currency" :placeholder="t('admin.paymentChannels.modal.targetCurrencyPlaceholder')" />
+            </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.exchangeRate') }}</label>
+              <Input v-model="wechatConfig.exchange_rate" :placeholder="t('admin.paymentChannels.modal.exchangeRatePlaceholder')" />
+            </div>
           </div>
           <div class="mt-3 text-xs text-muted-foreground">{{ t('admin.paymentChannels.modal.wechatHint') }}</div>
         </div>
@@ -1114,6 +1170,14 @@ const closeModal = () => {
             <div class="min-w-0 md:col-span-2">
               <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.alipayRootCertSn') }}</label>
               <Input v-model="alipayConfig.alipay_root_cert_sn" :placeholder="t('admin.paymentChannels.modal.alipayRootCertSnPlaceholder')" />
+            </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.targetCurrency') }}</label>
+              <Input v-model="alipayConfig.target_currency" :placeholder="t('admin.paymentChannels.modal.targetCurrencyPlaceholder')" />
+            </div>
+            <div class="min-w-0">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.paymentChannels.modal.exchangeRate') }}</label>
+              <Input v-model="alipayConfig.exchange_rate" :placeholder="t('admin.paymentChannels.modal.exchangeRatePlaceholder')" />
             </div>
           </div>
           <div class="mt-3 text-xs text-muted-foreground">{{ t('admin.paymentChannels.modal.alipayHint') }}</div>
